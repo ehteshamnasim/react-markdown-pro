@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "ESNext",
+    "jsx": "react",
+    "lib": ["dom", "esnext"],
+    "declaration": true,
+    "declarationDir": "lib",
+    "declarationMap": false,       // Disable declaration maps
+    "sourceMap": false,            // Disable source maps
+    "outDir": "lib",
+    "rootDir": "src",
+    "strict": false,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "lib"]
+}
