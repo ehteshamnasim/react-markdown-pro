@@ -363,15 +363,36 @@ const MarkdownPro: FC<MarkdownProProps> = ({
       ? children
       : "";
       
+      const isCurrencyContext = (text:any, index:any) => {
+        // Check if the dollar sign is followed by one or more digits
+        const afterDollar = text.substring(index + 1);
+        const isFollowedByDigits = /^\d+(?:\.\d+)?/.test(afterDollar);
+        
+        // If not followed by digits, it's not a currency
+        if (!isFollowedByDigits) return false;
+        
+        // If preceded by a character that suggests math context, it's not a currency
+        if (index > 0) {
+          const prevChar = text[index - 1];
+          // If preceded by $ or _ or ^ or other math indicators, likely math not currency
+          if (['$', '_', '^', '\\'].includes(prevChar)) return false;
+        }
+        
+        return true;
+      }
   // First, preprocess the content to escape dollar signs in obvious currency contexts
   // Use explicit type check to make TypeScript happy
   const processedChildren = childString
-    .replace(/\\n/g, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    // Escape dollar signs in currency contexts (number immediately following $)
-    // This regex pattern matches $ followed by digits, with optional decimal part
-    .replace(/\$(\d+(\.\d+)?)/g, '\\$$1')
-    .replace(/\n/g, "\n");
+  .replace(/\\n/g, "\n")
+  .replace(/<br\s*\/?>/gi, "\n")
+  // Use a custom replacement function to handle currency vs. math contexts
+  .replace(/\$/g, (match, offset, string) => {
+    if (isCurrencyContext(string, offset)) {
+      return '\\$';  // Escape dollar signs in currency contexts
+    }
+    return match;    // Keep dollar signs in math contexts
+  })
+  .replace(/\n/g, "\n");
 
   // Include both the basic plugins and the math plugins
   const safeRemarkPlugins = [remarkGfm, remarkMath] as any[];
