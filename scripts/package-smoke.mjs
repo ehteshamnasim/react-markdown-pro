@@ -59,6 +59,7 @@ try {
 
   const consumerRequire = createRequire(join(consumerDirectory, "consumer.cjs"));
   assert.equal(typeof consumerRequire("react-markdown-pro"), "function");
+  assert.match(consumerRequire.resolve("react-markdown-pro/style.css"), /style\.css$/);
   const consumerEsm = await import(pathToFileURL(join(consumerDirectory, "node_modules/react-markdown-pro/lib/index.js")).href);
   assert.equal(typeof consumerEsm.default, "function");
 } finally {

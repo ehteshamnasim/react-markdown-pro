@@ -8,6 +8,17 @@
   },
   "description": "A customizable React Markdown renderer with GFM, KaTeX, code highlighting, and safe HTML controls.",
   "license": "MIT",
+  "homepage": "https://ehteshamnasim.github.io/react-markdown-pro/demo.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ehteshamnasim/react-markdown-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ehteshamnasim/react-markdown-pro/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./lib/index.cjs",
   "module": "./lib/index.js",
   "exports": {
@@ -16,9 +27,13 @@
       "import": "./lib/index.js",
       "require": "./lib/index.cjs",
       "default": "./lib/index.js"
-    }
+    },
+    "./style.css": "./lib/style.css"
   },
   "types": "lib/index.d.ts",
+  "sideEffects": [
+    "./lib/style.css"
+  ],
   "files": [
     "lib"
   ],

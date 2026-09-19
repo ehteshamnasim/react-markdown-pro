@@ -10,12 +10,17 @@ It keeps the original simple API while adding optional controls for applications
 npm install react-markdown-pro
 ```
 
-KaTeX styles are included by the component. No extra stylesheet import is required.
+Import the bundled styles once in your application entry point so KaTeX equations render correctly:
+
+```tsx
+import "react-markdown-pro/style.css";
+```
 
 ## Quick start
 
 ```tsx
 import MarkdownPro from "react-markdown-pro";
+import "react-markdown-pro/style.css";
 
 const article = `# Hello
 
