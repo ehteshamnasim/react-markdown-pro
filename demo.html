@@ -43,14 +43,28 @@
       .card { padding: 42px 0; }
       .section-kicker { color: #0f766e; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
       .intro { max-width: 680px; color: #526178; }
-      .playground-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; margin-top: 22px; }
-      .field-label, .preview-label { display: block; margin-bottom: 8px; color: #475569; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-      #markdown-input { width: 100%; min-height: 330px; resize: vertical; padding: 14px; border: 1px solid #cbd5e1; background: #0f172a; color: #e2e8f0; font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
-      .playground-preview { min-height: 330px; padding: 18px; border: 1px solid #dfe4ea; background: #fff; overflow-wrap: anywhere; }
-      .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; padding: 12px; border: 1px solid #dfe4ea; background: #f8fafc; color: #475569; font-size: 13px; }
-      .control-row label { display: inline-flex; align-items: center; gap: 6px; }
-      .control-row select, .reset-button { padding: 6px 9px; border: 1px solid #cbd5e1; background: #fff; color: #334155; font: inherit; }
-      .reset-button { cursor: pointer; font-weight: 700; }
+      .playground-shell { margin-top: 26px; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 14px; background: #f8fafc; }
+      .playground-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #dbe3ec; color: #475569; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+      .status-dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #14b8a6; box-shadow: 0 0 0 3px #ccfbf1; }
+      .safe-badge { padding: 4px 8px; border: 1px solid #99f6e4; border-radius: 999px; color: #0f766e; background: #f0fdfa; font-size: 10px; }
+      .playground-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 16px; padding: 18px; }
+      .field-label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #475569; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+      .field-label span { color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+      #markdown-input { width: 100%; min-height: 330px; resize: vertical; padding: 16px; border: 1px solid #334155; border-radius: 9px; outline: none; background: #0f172a; color: #e2e8f0; font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; transition: border-color .2s, box-shadow .2s; }
+      #markdown-input:focus { border-color: #2dd4bf; box-shadow: 0 0 0 3px rgba(20, 184, 166, .15); }
+      .playground-preview { min-height: 330px; max-height: 430px; overflow: auto; padding: 16px; border: 1px solid #dbe3ec; border-radius: 9px; background: #fff; overflow-wrap: anywhere; }
+      .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px; border-top: 1px solid #dbe3ec; background: #fff; color: #475569; font-size: 13px; }
+      .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+      .switch input { position: absolute; opacity: 0; pointer-events: none; }
+      .switch-track { position: relative; width: 34px; height: 20px; border-radius: 999px; background: #cbd5e1; transition: background .2s; }
+      .switch-track::after { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; content: ""; transition: transform .2s; }
+      .switch input:checked + .switch-track { background: #14b8a6; }
+      .switch input:checked + .switch-track::after { transform: translateX(14px); }
+      .switch.is-disabled { cursor: not-allowed; opacity: .5; }
+      .protocol-control { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+      .control-row select, .reset-button { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #334155; font: inherit; }
+      .reset-button { cursor: pointer; font-weight: 750; transition: border-color .2s, color .2s; }
+      .reset-button:hover { border-color: #14b8a6; color: #0f766e; }
       .card:first-child { border-top: 0; padding-top: 0; }
       .card h1 { margin-top: 0; font-size: 31px; letter-spacing: -.032em; }
       .card h2 { margin: 0 0 18px; font-size: 26px; letter-spacing: -.032em; }
