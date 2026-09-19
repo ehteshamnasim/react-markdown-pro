@@ -10,6 +10,8 @@ dist-ssr
 
 # testing
 /coverage
+/lib
+/test-results
 
 # next.js
 /.next/

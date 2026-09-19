@@ -1,4 +1,5 @@
-import React, { FC, ReactNode } from "react";
+// React Markdown renderer with GFM, math, code highlighting, and safe HTML controls.
+import React, { FC } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -8,87 +9,60 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import katex from "katex";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 
-// Import correct types for React Markdown components
-import { Components } from 'react-markdown/lib/ast-to-react';
+import { Components } from "react-markdown/lib/ast-to-react";
 
-// Define math component props
-interface MathComponentProps {
-  value?: string;
-  [key: string]: any;
-}
+const sanitizeSchema: any = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    code: [...(defaultSchema.attributes?.code || []), ["className", "math", "math-inline", "math-display", "language-math"]],
+    span: ["className"],
+    div: [...(defaultSchema.attributes?.div || []), ["className", "math", "math-display"]],
+  },
+};
 
 export interface MarkdownProProps {
-  children: string | string[] | null | undefined;
+  children?: string | string[] | null;
+  value?: string | null;
   applyStyles?: boolean;
   inline?: boolean;
+  allowHtml?: boolean;
+  sanitizeHtml?: boolean;
+  components?: Partial<Components>;
+  remarkPlugins?: any[];
+  rehypePlugins?: any[];
+  codeTheme?: any | false;
+  showLineNumbers?: boolean;
+  showCopyButton?: boolean;
+  onCopyCode?: (code: string, language: string) => void;
+  linkTarget?: React.HTMLAttributeAnchorTarget;
+  imageLoading?: "eager" | "lazy";
 }
 
 const MarkdownPro: FC<MarkdownProProps> = ({
   children,
+  value,
   applyStyles = true,
   inline = false,
+  allowHtml = true,
+  sanitizeHtml = true,
+  components: customComponents,
+  remarkPlugins = [],
+  rehypePlugins = [],
+  codeTheme = atomDark,
+  showLineNumbers = true,
+  showCopyButton = true,
+  onCopyCode,
+  linkTarget,
+  imageLoading = "lazy",
 }) => {
   const [copiedIndex, setCopiedIndex] = React.useState<number | null>(null);
 
-  // Create separate math component implementations
-  const InlineMathComponent = ({ value, ...props }: MathComponentProps) => {
-    if (value === undefined || value === null) {
-      return <span>$</span>;
-    }
-    
-    if (typeof value === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(value)) {
-      return <span>${value}</span>;
-    }
-    
-    try {
-      return (
-        <span
-          dangerouslySetInnerHTML={{
-            __html: katex.renderToString(String(value), { throwOnError: false }),
-          }}
-          {...props}
-        />
-      );
-    } catch (e) {
-      return <span>${value}$</span>;
-    }
-  };
-
-  const BlockMathComponent = ({ value, ...props }: MathComponentProps) => {
-    if (value === undefined || value === null) {
-      return <p>$$</p>;
-    }
-    
-    if (typeof value === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(value)) {
-      return <p>${value}</p>;
-    }
-    
-    try {
-      return (
-        <div
-          style={{
-            display: "block",
-            background: "#f9f9f9",
-            borderRadius: "4px",
-            marginBottom: "1em",
-            overflowX: "auto",
-          }}
-          dangerouslySetInnerHTML={{
-            __html: katex.renderToString(String(value), { displayMode: true, throwOnError: false }),
-          }}
-          {...props}
-        />
-      );
-    } catch (e) {
-      return <p>${value}$</p>;
-    }
-  };
-
-  // Define the components with proper typing
   const components: Partial<Components> = {
+    pre: ({ children }) => <>{children}</>,
     h1: ({ node, children, ...props }) => (
       <h1 id={`heading-${(node as any)?.position?.start?.line || "1"}`} {...props}>
         {children}
@@ -119,24 +93,12 @@ const MarkdownPro: FC<MarkdownProProps> = ({
         {children}
       </h6>
     ),
-    a: ({ href, children, ...props }) => {
-      // Create a safely typed version of the children
-      let cleanChildren: React.ReactNode = children;
-      
-      // Only attempt string operations if children is actually a string
-      if (Array.isArray(children)) {
-        cleanChildren = children.map(child => 
-          typeof child === "string" ? child.replace(/,/g, "") : child
-        );
-      } else if (children !== null && children !== undefined && typeof children === "string") {
-        // Use explicit type assertion to convince TypeScript this is a string
-        const childrenAsString = children as string;
-        cleanChildren = childrenAsString.replace(/,/g, "");
-      }
-      
+    a: ({ href, children, node: _node, ...props }) => {
       return (
         <a
           href={href}
+          target={linkTarget}
+          rel={linkTarget === "_blank" ? "noopener noreferrer" : undefined}
           style={{
             color: "black",
             display: "flex",
@@ -144,12 +106,12 @@ const MarkdownPro: FC<MarkdownProProps> = ({
           }}
           {...props}
         >
-          {cleanChildren}
+          {children}
         </a>
       );
     },
     code: ({ node, inline: isInline, className, children, ...props }) => {
-      if (!applyStyles) {
+      if (!applyStyles || codeTheme === false) {
         return <code {...props}>{children}</code>;
       }
       const match = /language-(\w+)/.exec(className || "");
@@ -158,11 +120,16 @@ const MarkdownPro: FC<MarkdownProProps> = ({
       
       return !isInline && match ? (
         <div style={{ marginBottom: "1em" }}>
-          <CopyToClipboard
+          {showCopyButton ? <CopyToClipboard
             text={children !== undefined && children !== null ? String(children).replace(/\n$/, "") : ""}
-            onCopy={() => setCopiedIndex(positionLine)}
+            onCopy={() => {
+              setCopiedIndex(positionLine);
+              onCopyCode?.(children !== undefined && children !== null ? String(children).replace(/\n$/, "") : "", language);
+            }}
           >
-            <div
+            <button
+              type="button"
+              aria-label={`Copy ${language} code`}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -171,6 +138,9 @@ const MarkdownPro: FC<MarkdownProProps> = ({
                 padding: "0.3em",
                 borderTopLeftRadius: "4px",
                 borderTopRightRadius: "4px",
+                border: 0,
+                width: "100%",
+                cursor: "pointer",
               }}
             >
               <span
@@ -205,10 +175,10 @@ const MarkdownPro: FC<MarkdownProProps> = ({
                 </svg>
                 {copiedIndex === positionLine ? "Copied!" : "Copy"}
               </span>
-            </div>
-          </CopyToClipboard>
+            </button>
+          </CopyToClipboard> : null}
           <SyntaxHighlighter
-            style={atomDark as any}
+            style={codeTheme as any}
             language={language}
             PreTag="div"
             {...props}
@@ -218,7 +188,7 @@ const MarkdownPro: FC<MarkdownProProps> = ({
               borderBottomLeftRadius: "4px",
               borderBottomRightRadius: "4px",
             }}
-            showLineNumbers={true}
+            showLineNumbers={showLineNumbers}
           >
             {children !== undefined && children !== null ? String(children).replace(/\n$/, "") : ""}
           </SyntaxHighlighter>
@@ -237,7 +207,7 @@ const MarkdownPro: FC<MarkdownProProps> = ({
         </code>
       );
     },
-    ul: ({ children, ...props }) => (
+    ul: ({ children, ordered: _ordered, depth: _depth, node: _node, ...props }) => (
       <ul
         style={
           applyStyles
@@ -254,7 +224,7 @@ const MarkdownPro: FC<MarkdownProProps> = ({
         {children}
       </ul>
     ),
-    ol: ({ children, ...props }) => (
+    ol: ({ children, ordered: _ordered, depth: _depth, node: _node, ...props }) => (
       <ol
         style={
           applyStyles
@@ -274,7 +244,7 @@ const MarkdownPro: FC<MarkdownProProps> = ({
         {children}
       </ol>
     ),
-    li: ({ children, ...props }) => (
+    li: ({ children, ordered: _ordered, index: _index, checked: _checked, node: _node, ...props }) => (
       <li
         style={
           applyStyles
@@ -293,114 +263,107 @@ const MarkdownPro: FC<MarkdownProProps> = ({
         {children}
       </li>
     ),
-    p: ({ children, ...props }) =>
+    p: ({ children, node: _node, ...props }) =>
       inline ? <span {...props}>{children}</span> : <p {...props}>{children}</p>,
-    sub: ({ children, ...props }) => (
+    sub: ({ children, node: _node, ...props }) => (
       <sub style={{ fontSize: "0.8em", verticalAlign: "sub" }} {...props}>
         {children}
       </sub>
     ),
-    sup: ({ children, ...props }) => (
+    sup: ({ children, node: _node, ...props }) => (
       <sup style={{ fontSize: "0.8em", verticalAlign: "super" }} {...props}>
         {children}
       </sup>
     ),
-    strong: ({ children, ...props }) => (
+    strong: ({ children, node: _node, ...props }) => (
       <strong style={{ fontWeight: "bold" }} {...props}>
         {children}
       </strong>
     ),
-    em: ({ children, ...props }) => (
+    em: ({ children, node: _node, ...props }) => (
       <em style={{ fontStyle: "italic" }} {...props}>
         {children}
       </em>
     ),
-    blockquote: ({ children, ...props }) => (
+    blockquote: ({ children, node: _node, ...props }) => (
       <blockquote style={{ borderLeft: "5px solid #ccc", paddingLeft: "10px" }} {...props}>
         {children}
       </blockquote>
     ),
-    hr: (props) => <hr style={{ borderTop: "2px solid #aaa" }} {...props} />,
-    table: ({ children, ...props }) => (
-      <div style={{ overflowX: "auto" }} {...props}>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+    hr: ({ node: _node, ...props }) => <hr style={{ borderTop: "2px solid #aaa" }} {...props} />,
+    table: ({ children, node: _node, ...props }) => (
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%" }} {...props}>
           {children}
         </table>
       </div>
     ),
-    tr: ({ children, ...props }) => <tr {...props}>{children}</tr>,
-    td: ({ children, ...props }) => (
+    tr: ({ children, isHeader: _isHeader, node: _node, ...props }) => <tr {...props}>{children}</tr>,
+    td: ({ children, isHeader: _isHeader, node: _node, ...props }) => (
       <td style={{ border: "1px solid #ddd", padding: "8px" }} {...props}>
         {children}
       </td>
     ),
-    th: ({ children, ...props }) => (
+    th: ({ children, isHeader: _isHeader, node: _node, ...props }) => (
       <th style={{ border: "1px solid #ddd", padding: "8px", fontWeight: "bold" }} {...props}>
         {children}
       </th>
     ),
-    img: ({ src, alt, ...props }) => (
+    img: ({ src, alt, node: _node, ...props }) => (
       <img
         src={src}
         alt={alt}
+        loading={imageLoading}
         style={{ maxWidth: "100%", display: "block", margin: "10px 0" }}
         {...props}
       />
     ),
-    // Use the custom components for math rendering
-    // Custom components added through index signature
   };
 
-  // Add custom components for math via index signature
-  (components as any)['inlineMath'] = InlineMathComponent;
-  (components as any)['math'] = BlockMathComponent;
-
-  // Ensure the markdown string is typed as a string with explicit typing
-  const childString: string =
-    Array.isArray(children)
+  const childString: string = value !== undefined && value !== null
+    ? value
+    : Array.isArray(children)
       ? children.join("")
       : typeof children === "string"
-      ? children
-      : "";
-      
-      const isCurrencyContext = (text:any, index:any) => {
-        // Check if the dollar sign is followed by one or more digits
-        const afterDollar = text.substring(index + 1);
-        const isFollowedByDigits = /^\d+(?:\.\d+)?/.test(afterDollar);
-        
-        // If not followed by digits, it's not a currency
-        if (!isFollowedByDigits) return false;
-        
-        // If preceded by a character that suggests math context, it's not a currency
-        if (index > 0) {
-          const prevChar = text[index - 1];
-          // If preceded by $ or _ or ^ or other math indicators, likely math not currency
-          if (['$', '_', '^', '\\'].includes(prevChar)) return false;
-        }
-        
-        return true;
-      }
-  // First, preprocess the content to escape dollar signs in obvious currency contexts
-  // Use explicit type check to make TypeScript happy
-  const processedChildren = childString
-  .replace(/\\n/g, "\n")
-  .replace(/<br\s*\/?>/gi, "\n")
-  // Use a custom replacement function to handle currency vs. math contexts
-  .replace(/\$/g, (match, offset, string) => {
-    if (isCurrencyContext(string, offset)) {
-      return '\\$';  // Escape dollar signs in currency contexts
-    }
-    return match;    // Keep dollar signs in math contexts
-  })
-  .replace(/\n/g, "\n");
+        ? children
+        : "";
 
-  // Include both the basic plugins and the math plugins
-  const safeRemarkPlugins = [remarkGfm, remarkMath] as any[];
-  const safeRehypePlugins = [rehypeSlug, rehypeKatex, rehypeRaw] as any[];
+  const isCurrencyContext = (text: string, index: number): boolean => {
+    const afterDollar = text.substring(index + 1);
+    const isFollowedByDigits = /^\d+(?:\.\d+)?/.test(afterDollar);
+
+    if (!isFollowedByDigits) return false;
+
+    if (index > 0) {
+      const prevChar = text[index - 1];
+      if (["$", "_", "^", "\\"].includes(prevChar)) return false;
+    }
+
+    return true;
+  };
+
+  const processedChildren = childString
+    .replace(/\\n/g, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/\$/g, (match, offset, string) => {
+      if (isCurrencyContext(string, offset)) {
+        return "\\$";
+      }
+
+      return match;
+    });
+
+  const safeRemarkPlugins = [remarkGfm, remarkMath, ...remarkPlugins] as any[];
+  const safeRehypePlugins = [
+    ...(allowHtml ? [rehypeRaw, ...(sanitizeHtml ? [[rehypeSanitize, sanitizeSchema]] : [])] : []),
+    rehypeSlug,
+    rehypeKatex,
+    ...rehypePlugins,
+  ] as any[];
 
   return (
     <ReactMarkdown
-      components={components}
+      components={{ ...components, ...customComponents }}
       remarkPlugins={safeRemarkPlugins}
       rehypePlugins={safeRehypePlugins}
     >

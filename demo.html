@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Interactive reference for react-markdown-pro, a React Markdown renderer with GFM, KaTeX math, syntax highlighting, copy controls, and safe HTML." />
+    <meta name="keywords" content="React Markdown, Markdown renderer, GFM, GitHub Flavored Markdown, KaTeX, LaTeX, syntax highlighting, TypeScript" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#101828" />
+    <meta property="og:title" content="react-markdown-pro demo" />
+    <meta property="og:description" content="A complete interactive reference for rendering Markdown in React." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <title>react-markdown-pro demo</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <style>
+      :root { color: #172033; background: #f7f8fa; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; font-size: 16px; line-height: 1.65; }
+      header { color: #eff6ff; background: #101828; }
+      .topbar { display: flex; max-width: 1120px; align-items: center; justify-content: space-between; margin: 0 auto; padding: 14px 28px; }
+      .brand { font-size: 15px; font-weight: 750; letter-spacing: -.01em; }
+      .brand span { color: #98a2b3; font-weight: 500; }
+      .version { color: #98a2b3; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .hero-wrap { color: #eff6ff; background: #101828; }
+      .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(290px, .9fr); gap: 52px; max-width: 1120px; margin: 0 auto; padding: 66px 28px 58px; }
+      .eyebrow { color: #5eead4; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { max-width: 680px; margin: 10px 0 18px; font-size: clamp(39px, 5vw, 60px); letter-spacing: -.052em; line-height: 1; }
+      .lead { max-width: 650px; margin: 0; color: #cbd5e1; font-size: 18px; }
+      .hero-panel { align-self: center; border: 1px solid #344054; background: #172033; }
+      .panel-label { display: flex; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #344054; color: #98a2b3; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .hero-panel pre { overflow: auto; margin: 0; padding: 18px; color: #d0d5dd; font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .hero-panel .keyword { color: #5eead4; } .hero-panel .string { color: #fda4af; } .hero-panel .component { color: #93c5fd; }
+      .layout { display: grid; grid-template-columns: 205px minmax(0, 1fr); gap: 60px; max-width: 1120px; margin: 0 auto; padding: 52px 28px 88px; }
+      aside { align-self: start; position: sticky; top: 20px; padding-top: 12px; }
+      aside p { margin: 0 0 8px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+      nav { display: grid; gap: 1px; }
+      nav strong { margin: 14px 0 4px; color: #98a2b3; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
+      nav a { padding: 6px 9px; border-left: 2px solid transparent; color: #526178; font-size: 14px; text-decoration: none; }
+      nav a:hover, nav a:focus-visible { border-color: #14b8a6; color: #0f766e; background: #f0fdfa; outline: none; }
+      .card { padding: 42px 0; }
+      .card:first-child { border-top: 0; padding-top: 0; }
+      .card h1 { margin-top: 0; font-size: 31px; letter-spacing: -.032em; }
+      .card h2 { margin: 0 0 18px; font-size: 26px; letter-spacing: -.032em; }
+      .card a { color: #0f766e; }
+      .card table { width: 100%; border-collapse: collapse; }
+      .card th, .card td { padding: 9px 10px; border: 1px solid #dfe4ea; text-align: left; }
+      .card th { background: #f8fafc; }
+      .card blockquote { margin-left: 0; padding-left: 16px; color: #526178; }
+      .card img { width: 100%; border-radius: 6px; }
+      .caption, .event { margin: 16px 0; padding: 10px 14px; border-left: 3px solid #cbd5e1; background: #eef2f6; color: #526178; font-size: 14px; }
+      .event { border-color: #0f766e; color: #0f766e; font-weight: 650; }
+      .brand-link { color: #0f766e; font-weight: 700; }
+      .settings { width: 100%; border-collapse: collapse; font-size: 14px; }
+      .settings th, .settings td { padding: 11px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+      .settings th { color: #475569; font-weight: 700; }
+      .examples-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+      .example { min-width: 0; padding: 18px; border: 1px solid #dfe4ea; background: #fff; }
+      .example h3 { margin: 0 0 10px; font-size: 15px; }
+      .example p { margin-bottom: 0; }
+      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/demo.tsx"></script>
+  </body>
+</html>
