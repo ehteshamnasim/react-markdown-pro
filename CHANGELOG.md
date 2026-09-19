@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Fixed
+
+- Published package metadata, style export, and release validation for npm consumers.
+
 ## 1.1.0
 
 ### Added
