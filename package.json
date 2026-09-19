@@ -1,6 +1,6 @@
 {
   "name": "react-markdown-pro",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "type": "module",
   "author": {
     "name": "Ehtesham",
@@ -39,7 +39,7 @@
   ],
   "scripts": {
     "clean": "rimraf lib",
-    "build": "npm run clean && vite build --config vite.lib.config.ts && tsc --emitDeclarationOnly",
+    "build": "npm run clean && vite build --config vite.lib.config.ts && node scripts/postbuild-cjs.mjs && tsc --emitDeclarationOnly",
     "start": "vite",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

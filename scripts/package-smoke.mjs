@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { accessSync, constants, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -9,7 +9,11 @@ import { JSDOM } from "jsdom";
 
 const require = createRequire(import.meta.url);
 const projectRoot = resolve(dirname(new URL(import.meta.url).pathname), "..");
-const npmCache = process.env.npm_config_cache || join(tmpdir(), "react-markdown-pro-npm-cache");
+const configuredCache = process.env.npm_config_cache;
+let npmCache = join(tmpdir(), "react-markdown-pro-npm-cache");
+if (configuredCache) {
+  try { accessSync(configuredCache, constants.W_OK); npmCache = configuredCache; } catch { /* use a writable temporary cache */ }
+}
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost" });
 
 Object.assign(globalThis, {

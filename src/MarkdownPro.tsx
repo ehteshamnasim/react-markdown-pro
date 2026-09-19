@@ -1,375 +1,81 @@
-// React Markdown renderer with GFM, math, code highlighting, and safe HTML controls.
+// React Markdown renderer with secure defaults, document navigation, and progressively loaded code highlighting.
 import React, { FC } from "react";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-
+import "katex/dist/katex.min.css";
 import { Components } from "react-markdown/lib/ast-to-react";
+import { PluggableList } from "unified";
 
-const sanitizeSchema: any = {
-  ...defaultSchema,
-  attributes: {
-    ...defaultSchema.attributes,
-    code: [...(defaultSchema.attributes?.code || []), ["className", "math", "math-inline", "math-display", "language-math"]],
-    span: ["className"],
-    div: [...(defaultSchema.attributes?.div || []), ["className", "math", "math-display"]],
-  },
-};
-
+export type UrlKind = "href" | "src";
+export type UrlTransform = (url: string, kind: UrlKind) => string | null | undefined;
+export type CodeTheme = Record<string, React.CSSProperties>;
+export type FrontmatterValue = string | number | boolean | string[];
+export type Frontmatter = Record<string, FrontmatterValue>;
+export interface TocItem { depth: number; id: string; value: string; }
+export interface TocOptions { title?: string; minDepth?: number; maxDepth?: number; className?: string; }
 export interface MarkdownProProps {
-  children?: string | string[] | null;
-  value?: string | null;
-  applyStyles?: boolean;
-  inline?: boolean;
-  allowHtml?: boolean;
-  sanitizeHtml?: boolean;
-  components?: Partial<Components>;
-  remarkPlugins?: any[];
-  rehypePlugins?: any[];
-  codeTheme?: any | false;
-  showLineNumbers?: boolean;
-  showCopyButton?: boolean;
-  onCopyCode?: (code: string, language: string) => void;
-  linkTarget?: React.HTMLAttributeAnchorTarget;
-  imageLoading?: "eager" | "lazy";
+  children?: string | string[] | null; value?: string | null; applyStyles?: boolean; inline?: boolean;
+  allowHtml?: boolean; sanitizeHtml?: boolean; sanitizeSchema?: Record<string, unknown>;
+  allowedElements?: string[]; disallowedElements?: string[]; unwrapDisallowed?: boolean;
+  allowedProtocols?: string[]; urlTransform?: UrlTransform; components?: Partial<Components>;
+  remarkPlugins?: PluggableList; rehypePlugins?: PluggableList; codeTheme?: CodeTheme | false;
+  lazyCodeHighlighting?: boolean; showLineNumbers?: boolean; showCopyButton?: boolean;
+  onCopyCode?: (code: string, language: string) => void; linkTarget?: React.HTMLAttributeAnchorTarget;
+  imageLoading?: "eager" | "lazy"; toc?: boolean | TocOptions; headingLinks?: boolean;
+  callouts?: boolean; frontmatter?: boolean; onFrontmatter?: (data: Frontmatter) => void;
+  renderFrontmatter?: (data: Frontmatter) => React.ReactNode;
 }
+interface ParsedDocument { content: string; data: Frontmatter; }
+interface CodeMetadata { collapsed: boolean; highlightedLines: Set<number>; lineNumbers?: boolean; title?: string; }
+interface TreeNode { type?: string; value?: string; meta?: string; data?: { hProperties?: Record<string, unknown>; meta?: string }; children?: TreeNode[]; }
 
-const MarkdownPro: FC<MarkdownProProps> = ({
-  children,
-  value,
-  applyStyles = true,
-  inline = false,
-  allowHtml = true,
-  sanitizeHtml = true,
-  components: customComponents,
-  remarkPlugins = [],
-  rehypePlugins = [],
-  codeTheme = atomDark,
-  showLineNumbers = true,
-  showCopyButton = true,
-  onCopyCode,
-  linkTarget,
-  imageLoading = "lazy",
-}) => {
+const defaultSanitizeSchema: Record<string, unknown> = { ...defaultSchema, attributes: { ...defaultSchema.attributes, code: [...(defaultSchema.attributes?.code || []), ["className", "math", "math-inline", "math-display", "language-math"], ["data-code-meta"]], span: [...(defaultSchema.attributes?.span || []), ["className"]], div: [...(defaultSchema.attributes?.div || []), ["className", "math", "math-display"]] } };
+const calloutKinds = new Set(["note", "tip", "info", "warning", "danger"]);
+const defaultProtocols = ["http", "https", "mailto", "tel"];
+
+const readText = (value: React.ReactNode): string => typeof value === "string" || typeof value === "number" ? String(value) : Array.isArray(value) ? value.map(readText).join("") : React.isValidElement(value) ? readText(value.props.children) : "";
+const slugify = (value: string): string => value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-") || "section";
+const parseScalar = (value: string): FrontmatterValue => { const trimmed = value.trim(); if (/^(true|false)$/i.test(trimmed)) return trimmed.toLowerCase() === "true"; if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed); if (/^\[.*\]$/.test(trimmed)) return trimmed.slice(1, -1).split(",").map((item) => item.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean); return trimmed.replace(/^['"]|['"]$/g, ""); };
+export const parseFrontmatter = (markdown: string): ParsedDocument => { const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/); if (!match) return { content: markdown, data: {} }; const data: Frontmatter = {}; for (const line of match[1].split(/\r?\n/)) { const entry = line.match(/^([A-Za-z][\w-]*):\s*(.*)$/); if (entry) data[entry[1]] = parseScalar(entry[2]); } return { content: markdown.slice(match[0].length), data }; };
+
+const normalizeCallouts = (markdown: string): string => { const lines = markdown.split(/\r?\n/); const output: string[] = []; let fenced = false; for (let index = 0; index < lines.length; index += 1) { const line = lines[index]; if (/^\s*(```|~~~)/.test(line)) fenced = !fenced; const start = !fenced && line.match(/^:::(note|tip|info|warning|danger)(?:\s+(.+))?\s*$/i); if (!start) { output.push(line); continue; } const body: string[] = []; let endFound = false; for (index += 1; index < lines.length; index += 1) { if (lines[index].trim() === ":::") { endFound = true; break; } body.push(lines[index]); } if (!endFound) { output.push(line, ...body); break; } const title = start[2] || ""; output.push(`> [!${start[1].toUpperCase()}]${title ? ` ${title}` : ""}`, ...body.map((item) => `> ${item}`)); } return output.join("\n"); };
+const walk = (node: TreeNode, visitor: (item: TreeNode) => void): void => { visitor(node); node.children?.forEach((child) => walk(child, visitor)); };
+const remarkCodeMetadata = () => (tree: TreeNode): void => walk(tree, (node) => { if (node.type === "code" && node.meta) node.data = { ...node.data, meta: node.meta, hProperties: { ...node.data?.hProperties, "data-code-meta": node.meta } }; });
+const remarkCallouts = () => (tree: TreeNode): void => walk(tree, (node) => { if (node.type !== "blockquote") return; const first = node.children?.[0]?.children?.[0]; const match = first?.value?.match(/^\[!(NOTE|TIP|INFO|WARNING|DANGER)\]\s*(.*)$/i); if (!first || !match) return; const kind = match[1].toLowerCase(); first.value = ""; node.data = { ...node.data, hProperties: { ...node.data?.hProperties, "data-callout": kind, "data-callout-title": match[2] || kind[0].toUpperCase() + kind.slice(1) } }; });
+const parseRanges = (value: string): Set<number> => { const highlighted = new Set<number>(); for (const token of value.split(",")) { const match = token.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/); if (!match) continue; const start = Number(match[1]); const end = Number(match[2] || match[1]); for (let number = Math.min(start, end); number <= Math.max(start, end); number += 1) highlighted.add(number); } return highlighted; };
+export const parseCodeMetadata = (metadata = ""): CodeMetadata => { const titleMatch = metadata.match(/(?:title|filename)=(?:"([^"]+)"|'([^']+)'|([^\s{]+))/); const ranges = metadata.match(/(?:highlight=)?\{([^}]+)\}/); return { collapsed: /\b(?:collapse|collapsed)\b/.test(metadata), highlightedLines: parseRanges(ranges?.[1] || ""), lineNumbers: /\blineNumbers=false\b/.test(metadata) ? false : undefined, title: titleMatch?.[1] || titleMatch?.[2] || titleMatch?.[3] }; };
+export const defaultUrlTransform: UrlTransform = (url) => { const value = url.trim(); if (!value || value.startsWith("#") || value.startsWith("/") || value.startsWith("./") || value.startsWith("../")) return value; const protocol = value.match(/^([a-z][a-z\d+.-]*):/i)?.[1]?.toLowerCase(); return !protocol || defaultProtocols.includes(protocol) ? value : null; };
+const isCurrencyContext = (text: string, index: number): boolean => /^\d+(?:\.\d+)?/.test(text.substring(index + 1)) && (index === 0 || !["$", "_", "^", "\\"].includes(text[index - 1]));
+const normalize = (markdown: string): string => markdown.replace(/\\n/g, "\n").replace(/<br\s*\/?>/gi, "\n").replace(/\$/g, (match, offset, source) => isCurrencyContext(source, offset) ? "\\$" : match);
+
+const LazySyntaxHighlighter = React.lazy(async () => { const [{ Prism }, theme] = await Promise.all([import("react-syntax-highlighter"), import("react-syntax-highlighter/dist/cjs/styles/prism")]); const HighlightedCode: FC<{ code: string; language: string; theme: CodeTheme | false; showLineNumbers: boolean; highlightedLines: Set<number> }> = ({ code, language, theme: selectedTheme, showLineNumbers, highlightedLines }) => <Prism style={selectedTheme || theme.atomDark} language={language} PreTag="div" customStyle={{ fontSize: "14px", marginTop: "0", borderBottomLeftRadius: "4px", borderBottomRightRadius: "4px" }} showLineNumbers={showLineNumbers} wrapLines={highlightedLines.size > 0} lineProps={(lineNumber: number) => highlightedLines.has(lineNumber) ? { style: { background: "rgba(250, 204, 21, 0.18)", display: "block" } } : {}}>{code}</Prism>; return { default: HighlightedCode }; });
+
+const MarkdownPro: FC<MarkdownProProps> = ({ children, value, applyStyles = true, inline = false, allowHtml = false, sanitizeHtml = true, sanitizeSchema, allowedElements, disallowedElements, unwrapDisallowed = false, allowedProtocols = defaultProtocols, urlTransform, components: customComponents, remarkPlugins = [], rehypePlugins = [], codeTheme, lazyCodeHighlighting = true, showLineNumbers = true, showCopyButton = true, onCopyCode, linkTarget, imageLoading = "lazy", toc = false, headingLinks = true, callouts = true, frontmatter = true, onFrontmatter, renderFrontmatter }) => {
   const [copiedIndex, setCopiedIndex] = React.useState<number | null>(null);
-
+  const childString = value ?? (Array.isArray(children) ? children.join("") : typeof children === "string" ? children : "");
+  const parsed = parseFrontmatter(childString); const frontmatterData = frontmatter ? parsed.data : {}; const source = callouts ? normalizeCallouts(normalize(frontmatter ? parsed.content : childString)) : normalize(frontmatter ? parsed.content : childString); const frontmatterKey = JSON.stringify(frontmatterData);
+  React.useEffect(() => { if (onFrontmatter) onFrontmatter(frontmatterData); }, [frontmatterKey, onFrontmatter]);
+  const tocItems = React.useMemo(() => { const used = new Map<string, number>(); return source.split(/\r?\n/).flatMap((line, lineIndex) => { const match = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/); if (!match) return []; const itemValue = match[2].replace(/[`*_~]/g, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1"); const base = slugify(itemValue); const count = used.get(base) || 0; used.set(base, count + 1); return [{ depth: match[1].length, value: itemValue, id: count ? `${base}-${count}` : base, line: lineIndex + 1 }]; }); }, [source]);
+  const tocByLine = React.useMemo(() => new Map(tocItems.map((item) => [item.line, item])), [tocItems]); const tocOptions: TocOptions = typeof toc === "object" ? toc : {}; const visibleToc = tocItems.filter((item) => item.depth >= (tocOptions.minDepth || 1) && item.depth <= (tocOptions.maxDepth || 6));
+  const resolveUrl = (url: string, kind: UrlKind): string => { const transformed = urlTransform ? urlTransform(url, kind) : defaultUrlTransform(url, kind); const protocol = url.trim().match(/^([a-z][a-z\d+.-]*):/i)?.[1]?.toLowerCase(); const allowed = protocol ? allowedProtocols.map((item) => item.toLowerCase()).includes(protocol) : true; if (transformed) return allowed ? transformed : ""; return !urlTransform && protocol && allowed ? url : ""; };
+  const heading = (depth: number, node: { position?: { start?: { line?: number } } } | undefined, content: React.ReactNode, props: React.HTMLAttributes<HTMLHeadingElement>) => { const item = tocByLine.get(node?.position?.start?.line || -1); const id = item?.id || slugify(readText(content)); const tag = `h${depth}` as keyof JSX.IntrinsicElements; return React.createElement(tag, { ...props, id }, content, headingLinks ? <a href={`#${id}`} aria-hidden="true" tabIndex={-1} className="markdown-pro-heading-link">#</a> : null); };
   const components: Partial<Components> = {
-    pre: ({ children }) => <>{children}</>,
-    h1: ({ node, children, ...props }) => (
-      <h1 id={`heading-${(node as any)?.position?.start?.line || "1"}`} {...props}>
-        {children}
-      </h1>
-    ),
-    h2: ({ node, children, ...props }) => (
-      <h2 id={`heading-${(node as any)?.position?.start?.line || "2"}`} {...props}>
-        {children}
-      </h2>
-    ),
-    h3: ({ node, children, ...props }) => (
-      <h3 id={`heading-${(node as any)?.position?.start?.line || "3"}`} {...props}>
-        {children}
-      </h3>
-    ),
-    h4: ({ node, children, ...props }) => (
-      <h4 id={`heading-${(node as any)?.position?.start?.line || "4"}`} {...props}>
-        {children}
-      </h4>
-    ),
-    h5: ({ node, children, ...props }) => (
-      <h5 id={`heading-${(node as any)?.position?.start?.line || "5"}`} {...props}>
-        {children}
-      </h5>
-    ),
-    h6: ({ node, children, ...props }) => (
-      <h6 id={`heading-${(node as any)?.position?.start?.line || "6"}`} {...props}>
-        {children}
-      </h6>
-    ),
-    a: ({ href, children, node: _node, ...props }) => {
-      return (
-        <a
-          href={href}
-          target={linkTarget}
-          rel={linkTarget === "_blank" ? "noopener noreferrer" : undefined}
-          style={{
-            color: "black",
-            display: "flex",
-            alignItems: "center",
-          }}
-          {...props}
-        >
-          {children}
-        </a>
-      );
-    },
-    code: ({ node, inline: isInline, className, children, ...props }) => {
-      if (!applyStyles || codeTheme === false) {
-        return <code {...props}>{children}</code>;
-      }
-      const match = /language-(\w+)/.exec(className || "");
-      const language = match ? match[1] : "plaintext";
-      const positionLine = (node as any)?.position?.start?.line || Math.random() * 1000;
-      
-      return !isInline && match ? (
-        <div style={{ marginBottom: "1em" }}>
-          {showCopyButton ? <CopyToClipboard
-            text={children !== undefined && children !== null ? String(children).replace(/\n$/, "") : ""}
-            onCopy={() => {
-              setCopiedIndex(positionLine);
-              onCopyCode?.(children !== undefined && children !== null ? String(children).replace(/\n$/, "") : "", language);
-            }}
-          >
-            <button
-              type="button"
-              aria-label={`Copy ${language} code`}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#f5f5f5",
-                padding: "0.3em",
-                borderTopLeftRadius: "4px",
-                borderTopRightRadius: "4px",
-                border: 0,
-                width: "100%",
-                cursor: "pointer",
-              }}
-            >
-              <span
-                style={{
-                  color: "#333",
-                  padding: "0.3em",
-                  fontSize: "0.8em",
-                }}
-              >
-                {language}
-              </span>
-              <span
-                style={{
-                  color: copiedIndex === positionLine ? "#0D5244" : "#000",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  fontSize: "0.8em",
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  className="bi bi-clipboard"
-                  viewBox="0 0 16 16"
-                  style={{ marginRight: "0.2em" }}
-                >
-                  <path d="M10 1.5v1h-4v-1a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5z" />
-                  <path d="M9.5 0a1.5 1.5 0 0 1 1.415 1H14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h3.085A1.5 1.5 0 0 1 6.5 0h3zM14 4H2v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V4z" />
-                </svg>
-                {copiedIndex === positionLine ? "Copied!" : "Copy"}
-              </span>
-            </button>
-          </CopyToClipboard> : null}
-          <SyntaxHighlighter
-            style={codeTheme as any}
-            language={language}
-            PreTag="div"
-            {...props}
-            customStyle={{
-              fontSize: "14px",
-              marginTop: "0",
-              borderBottomLeftRadius: "4px",
-              borderBottomRightRadius: "4px",
-            }}
-            showLineNumbers={showLineNumbers}
-          >
-            {children !== undefined && children !== null ? String(children).replace(/\n$/, "") : ""}
-          </SyntaxHighlighter>
-        </div>
-      ) : (
-        <code
-          {...props}
-          style={{
-            backgroundColor: "#f3f3f3",
-            padding: "0.2rem",
-            borderRadius: "4px",
-            fontSize: "0.8em",
-          }}
-        >
-          {children}
-        </code>
-      );
-    },
-    ul: ({ children, ordered: _ordered, depth: _depth, node: _node, ...props }) => (
-      <ul
-        style={
-          applyStyles
-            ? {
-                display: "block",
-                listStyleType: "disc",
-                margin: "0em 0px 8px",
-                paddingLeft: "20px",
-              }
-            : undefined
-        }
-        {...props}
-      >
-        {children}
-      </ul>
-    ),
-    ol: ({ children, ordered: _ordered, depth: _depth, node: _node, ...props }) => (
-      <ol
-        style={
-          applyStyles
-            ? {
-                display: "block",
-                listStyleType: "decimal",
-                marginTop: "1em",
-                marginBottom: "1em",
-                marginLeft: "0",
-                marginRight: "0",
-                paddingLeft: "20px",
-              }
-            : undefined
-        }
-        {...props}
-      >
-        {children}
-      </ol>
-    ),
-    li: ({ children, ordered: _ordered, index: _index, checked: _checked, node: _node, ...props }) => (
-      <li
-        style={
-          applyStyles
-            ? {
-                display: "list-item",
-                marginTop: "0.5em",
-                marginBottom: "0.5em",
-                marginLeft: "0",
-                marginRight: "0",
-                paddingLeft: "0",
-              }
-            : undefined
-        }
-        {...props}
-      >
-        {children}
-      </li>
-    ),
-    p: ({ children, node: _node, ...props }) =>
-      inline ? <span {...props}>{children}</span> : <p {...props}>{children}</p>,
-    sub: ({ children, node: _node, ...props }) => (
-      <sub style={{ fontSize: "0.8em", verticalAlign: "sub" }} {...props}>
-        {children}
-      </sub>
-    ),
-    sup: ({ children, node: _node, ...props }) => (
-      <sup style={{ fontSize: "0.8em", verticalAlign: "super" }} {...props}>
-        {children}
-      </sup>
-    ),
-    strong: ({ children, node: _node, ...props }) => (
-      <strong style={{ fontWeight: "bold" }} {...props}>
-        {children}
-      </strong>
-    ),
-    em: ({ children, node: _node, ...props }) => (
-      <em style={{ fontStyle: "italic" }} {...props}>
-        {children}
-      </em>
-    ),
-    blockquote: ({ children, node: _node, ...props }) => (
-      <blockquote style={{ borderLeft: "5px solid #ccc", paddingLeft: "10px" }} {...props}>
-        {children}
-      </blockquote>
-    ),
-    hr: ({ node: _node, ...props }) => <hr style={{ borderTop: "2px solid #aaa" }} {...props} />,
-    table: ({ children, node: _node, ...props }) => (
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%" }} {...props}>
-          {children}
-        </table>
-      </div>
-    ),
-    tr: ({ children, isHeader: _isHeader, node: _node, ...props }) => <tr {...props}>{children}</tr>,
-    td: ({ children, isHeader: _isHeader, node: _node, ...props }) => (
-      <td style={{ border: "1px solid #ddd", padding: "8px" }} {...props}>
-        {children}
-      </td>
-    ),
-    th: ({ children, isHeader: _isHeader, node: _node, ...props }) => (
-      <th style={{ border: "1px solid #ddd", padding: "8px", fontWeight: "bold" }} {...props}>
-        {children}
-      </th>
-    ),
-    img: ({ src, alt, node: _node, ...props }) => (
-      <img
-        src={src}
-        alt={alt}
-        loading={imageLoading}
-        style={{ maxWidth: "100%", display: "block", margin: "10px 0" }}
-        {...props}
-      />
-    ),
+    pre: ({ children: content }) => <>{content}</>,
+    h1: ({ node, children: content, ...props }) => heading(1, node, content, props), h2: ({ node, children: content, ...props }) => heading(2, node, content, props), h3: ({ node, children: content, ...props }) => heading(3, node, content, props), h4: ({ node, children: content, ...props }) => heading(4, node, content, props), h5: ({ node, children: content, ...props }) => heading(5, node, content, props), h6: ({ node, children: content, ...props }) => heading(6, node, content, props),
+    a: ({ href = "", children: content, node: _node, ...props }) => <a href={href} target={linkTarget} rel={linkTarget === "_blank" ? "noopener noreferrer" : undefined} {...props}>{content}</a>,
+    img: ({ src = "", alt = "", node: _node, ...props }) => <img src={src} alt={alt} loading={imageLoading} style={applyStyles ? { maxWidth: "100%", display: "block", margin: "10px 0" } : undefined} {...props} />,
+    code: ({ node, inline: isInline, className, children: content, ...props }) => { const language = /language-([\w+-]+)/.exec(className || "")?.[1] || "plaintext"; const code = readText(content).replace(/\n$/, ""); const propertyMetadata = (props as unknown as { "data-code-meta"?: unknown })["data-code-meta"]; const metadata = parseCodeMetadata(String((node as unknown as TreeNode | undefined)?.data?.meta || propertyMetadata || "")); if (isInline) return <code {...props} style={applyStyles ? { backgroundColor: "#f3f3f3", padding: "0.2rem", borderRadius: "4px", fontSize: "0.8em" } : undefined}>{content}</code>; const display = codeTheme === false || !applyStyles || !lazyCodeHighlighting ? <pre><code className={className} {...props}>{code}</code></pre> : <React.Suspense fallback={<pre><code className={className}>{code}</code></pre>}><LazySyntaxHighlighter code={code} language={language} theme={codeTheme || false} showLineNumbers={metadata.lineNumbers ?? showLineNumbers} highlightedLines={metadata.highlightedLines} /></React.Suspense>; const position = node?.position?.start?.line || 0; const toolbar = <>{metadata.title ? <span>{metadata.title}</span> : <span>{language}</span>}{showCopyButton ? <CopyToClipboard text={code} onCopy={() => { setCopiedIndex(position); onCopyCode?.(code, language); }}><button type="button" aria-label={`Copy ${language} code`}>{copiedIndex === position ? "Copied!" : "Copy"}</button></CopyToClipboard> : null}</>; return metadata.collapsed ? <details className="markdown-pro-code"><summary>{toolbar}</summary>{display}</details> : <div className="markdown-pro-code"><div className="markdown-pro-code-toolbar">{toolbar}</div>{display}</div>; },
+    ul: ({ children: content, ordered: _ordered, depth: _depth, node: _node, ...props }) => <ul style={applyStyles ? { paddingLeft: "20px" } : undefined} {...props}>{content}</ul>, ol: ({ children: content, ordered: _ordered, depth: _depth, node: _node, ...props }) => <ol style={applyStyles ? { paddingLeft: "20px" } : undefined} {...props}>{content}</ol>, li: ({ children: content, ordered: _ordered, index: _index, checked: _checked, node: _node, ...props }) => <li style={applyStyles ? { margin: "0.5em 0" } : undefined} {...props}>{content}</li>, p: ({ children: content, node: _node, ...props }) => inline ? <span {...props}>{content}</span> : <p {...props}>{content}</p>,
+    blockquote: ({ children: content, node, ...props }) => { const properties = (node as unknown as { properties?: Record<string, unknown> } | undefined)?.properties; const marker = readText(content).trimStart().match(/^\[!(NOTE|TIP|INFO|WARNING|DANGER)\]\s*([^\n]*)/i); const kind = String(properties?.dataCallout || properties?.["data-callout"] || marker?.[1] || "").toLowerCase(); const title = String(properties?.dataCalloutTitle || properties?.["data-callout-title"] || marker?.[2] || (kind ? kind[0].toUpperCase() + kind.slice(1) : "")); const cleanContent = marker ? React.Children.map(content, (child) => React.isValidElement(child) ? React.cloneElement(child, undefined, readText(child.props.children).replace(/^\s*\[!(NOTE|TIP|INFO|WARNING|DANGER)\]\s*[^\n]*\n?/, "")) : child) : content; return calloutKinds.has(kind) ? <aside className={`markdown-pro-callout markdown-pro-callout-${kind}`} data-callout={kind} role={kind === "danger" ? "alert" : "note"}><strong>{title}</strong>{cleanContent}</aside> : <blockquote style={applyStyles ? { borderLeft: "4px solid #94a3b8", paddingLeft: "12px" } : undefined} {...props}>{content}</blockquote>; },
+    table: ({ children: content, node: _node, ...props }) => <div style={{ overflowX: "auto" }}><table style={applyStyles ? { borderCollapse: "collapse", width: "100%" } : undefined} {...props}>{content}</table></div>, td: ({ children: content, isHeader: _isHeader, node: _node, ...props }) => <td style={applyStyles ? { border: "1px solid #ddd", padding: "8px" } : undefined} {...props}>{content}</td>, th: ({ children: content, isHeader: _isHeader, node: _node, ...props }) => <th style={applyStyles ? { border: "1px solid #ddd", padding: "8px" } : undefined} {...props}>{content}</th>,
   };
-
-  const childString: string = value !== undefined && value !== null
-    ? value
-    : Array.isArray(children)
-      ? children.join("")
-      : typeof children === "string"
-        ? children
-        : "";
-
-  const isCurrencyContext = (text: string, index: number): boolean => {
-    const afterDollar = text.substring(index + 1);
-    const isFollowedByDigits = /^\d+(?:\.\d+)?/.test(afterDollar);
-
-    if (!isFollowedByDigits) return false;
-
-    if (index > 0) {
-      const prevChar = text[index - 1];
-      if (["$", "_", "^", "\\"].includes(prevChar)) return false;
-    }
-
-    return true;
-  };
-
-  const processedChildren = childString
-    .replace(/\\n/g, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/\$/g, (match, offset, string) => {
-      if (isCurrencyContext(string, offset)) {
-        return "\\$";
-      }
-
-      return match;
-    });
-
-  const safeRemarkPlugins = [remarkGfm, remarkMath, ...remarkPlugins] as any[];
-  const safeRehypePlugins = [
-    ...(allowHtml ? [rehypeRaw, ...(sanitizeHtml ? [[rehypeSanitize, sanitizeSchema]] : [])] : []),
-    rehypeSlug,
-    rehypeKatex,
-    ...rehypePlugins,
-  ] as any[];
-
-  return (
-    <ReactMarkdown
-      components={{ ...components, ...customComponents }}
-      remarkPlugins={safeRemarkPlugins}
-      rehypePlugins={safeRehypePlugins}
-    >
-      {processedChildren}
-    </ReactMarkdown>
-  );
+  const safeRemarkPlugins: PluggableList = [remarkGfm, remarkMath, remarkCodeMetadata, ...(callouts ? [remarkCallouts] : []), ...remarkPlugins];
+  const safeRehypePlugins = [...(allowHtml ? [rehypeRaw, ...(sanitizeHtml ? [[rehypeSanitize, sanitizeSchema || defaultSanitizeSchema]] : [])] : []), rehypeKatex, ...rehypePlugins] as unknown as PluggableList;
+  return <>{frontmatter && renderFrontmatter && Object.keys(frontmatterData).length ? renderFrontmatter(frontmatterData) : null}{toc && visibleToc.length ? <nav className={tocOptions.className} aria-label={tocOptions.title || "Table of contents"}><strong>{tocOptions.title || "On this page"}</strong><ol>{visibleToc.map((item) => <li key={item.id} style={{ marginLeft: `${(item.depth - (tocOptions.minDepth || 1)) * 12}px` }}><a href={`#${item.id}`}>{item.value}</a></li>)}</ol></nav> : null}<ReactMarkdown components={{ ...components, ...customComponents }} remarkPlugins={safeRemarkPlugins} rehypePlugins={safeRehypePlugins} allowedElements={allowedElements} disallowedElements={disallowedElements} unwrapDisallowed={unwrapDisallowed} transformLinkUri={(url: string) => resolveUrl(url, "href")} transformImageUri={(url: string) => resolveUrl(url, "src")}>{source}</ReactMarkdown></>;
 };
-
 export default MarkdownPro;

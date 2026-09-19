@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.0
+
+### Added
+
+- URL policy, allowed/disallowed element controls, code metadata, line highlighting, TOC, heading links, callouts, frontmatter, and footnotes.
+- Lazy-loaded syntax highlighting and stricter TypeScript declarations.
+
+### Changed
+
+- Raw HTML is now disabled by default; opt in with `allowHtml` and keep sanitization enabled for untrusted content.
+
 ## 1.2.0
 
 ### Added

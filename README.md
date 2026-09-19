@@ -1,8 +1,6 @@
 # react-markdown-pro
 
-A drop-in React Markdown renderer with GitHub Flavoured Markdown, KaTeX math, syntax-highlighted code, copy controls, responsive images, and safe HTML controls.
-
-It keeps the original simple API while adding optional controls for applications that need more.
+Production-ready React Markdown with GFM, KaTeX math, secure links and HTML policy controls, headings/TOC, callouts, frontmatter, footnotes, code metadata, line highlighting, and copy controls.
 
 ## Install
 
@@ -10,208 +8,145 @@ It keeps the original simple API while adding optional controls for applications
 npm install react-markdown-pro
 ```
 
-Import the bundled styles once in your application entry point so KaTeX equations render correctly:
-
-```tsx
-import "react-markdown-pro/style.css";
-```
-
-## Quick start
-
 ```tsx
 import MarkdownPro from "react-markdown-pro";
 import "react-markdown-pro/style.css";
 
-const article = `# Hello
-
-This supports **GFM**, tables, and math: $E = mc^2$.
-
-\`\`\`tsx
-const message = "Hello from MarkdownPro";
-\`\`\``;
-
-export function Article() {
-  return <MarkdownPro>{article}</MarkdownPro>;
+export function Article({ markdown }: { markdown: string }) {
+  return <MarkdownPro value={markdown} />;
 }
 ```
 
-## Live examples
+## Live demo
 
-The public demo is available at [react-markdown-pro on GitHub Pages](https://ehteshamnasim.github.io/react-markdown-pro/demo.html). Anyone can open this link after the Pages workflow completes.
+[Open the interactive demo](https://ehteshamnasim.github.io/react-markdown-pro/demo.html) · [source](https://github.com/ehteshamnasim/react-markdown-pro/blob/main/demo.html)
 
-For local development only, run `npm start`, then open [http://localhost:5173/demo.html](http://localhost:5173/demo.html).
+The demo covers GFM, math, nested content, code metadata, TOC, callouts, frontmatter, footnotes, HTML security, custom components, plugins, inline mode, and every public setting. For local development run `npm start` and open `http://localhost:5173/demo.html` (localhost is only for your computer).
 
-The public demo includes these direct sections:
+## What is included
 
-- [Markdown and GFM](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#gfm)
-- [Math rendering](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#math)
-- [Code and copy controls](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#code)
-- [HTML safety](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#security)
-- [Custom renderers and images](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#custom)
-- [Inline Markdown and plugin hooks](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#inline)
-
-The Pages workflow builds the Vite demo and deploys `dist` on every successful push to `main`. In the GitHub repository, enable **Settings → Pages → Source: GitHub Actions** once if it is not already enabled.
-
-## Features
-
-- GitHub Flavoured Markdown: tables, task lists, strikethrough, and autolinks
-- Inline and display LaTeX via KaTeX
-- Syntax-highlighted fenced code blocks with copy feedback and line-number controls
-- Responsive, lazy-loaded Markdown images
-- Stable heading anchors
-- Configurable external links and safe `_blank` behavior
-- Extensible `remark`, `rehype`, and element component hooks
-- Raw HTML compatibility with sanitization enabled by default
-- TypeScript declarations
+- GFM tables, task lists, autolinks, strikethrough, and footnotes
+- Inline/display KaTeX math and literal currency handling
+- Lazy syntax highlighting, copy buttons, line numbers, metadata titles/collapse, and highlighted lines
+- Stable heading IDs, permalink anchors, and generated table of contents
+- `:::note`, `:::tip`, `:::info`, `:::warning`, and `:::danger` callouts
+- YAML-like frontmatter with callback/render hooks
+- Secure 2.0 defaults: raw HTML is disabled unless `allowHtml` is explicitly enabled
+- URL protocol policy, custom URL transforms, allowed/disallowed elements, and Unified plugins
+- ESM, CommonJS, TypeScript declarations, and a standalone stylesheet
 
 ## API
 
-The original props remain fully supported.
-
-| Prop | Default | Description |
+| Prop | Default | Purpose |
 | --- | --- | --- |
-| `children` | optional | Markdown string or string array. |
-| `value` | none | Optional Markdown input; takes precedence over `children`. |
-| `applyStyles` | `true` | Keeps the package’s original list, table, code, image, and typography styles. |
-| `inline` | `false` | Renders paragraphs as spans for inline-only content. |
-| `allowHtml` | `true` | Set `false` to display embedded HTML as text. |
-| `sanitizeHtml` | `true` | Removes scripts, event attributes, and unsafe markup when HTML is enabled. Set `false` only for fully trusted content. |
-| `components` | none | Override built-in Markdown element renderers. |
-| `remarkPlugins` | `[]` | Additional remark plugins appended after GFM and math. |
-| `rehypePlugins` | `[]` | Additional rehype plugins appended after the built-ins. |
-| `codeTheme` | `atomDark` | A Prism theme object, or `false` for plain code. |
-| `showLineNumbers` | `true` | Show line numbers in highlighted code blocks. |
-| `showCopyButton` | `true` | Show or hide the code-copy control. |
-| `onCopyCode` | none | Receives `(code, language)` after code is copied. |
-| `linkTarget` | none | Link target. `_blank` automatically receives `noopener noreferrer`. |
-| `imageLoading` | `"lazy"` | Use `"eager"` for above-the-fold images. |
-
-Pass an empty string when there is no Markdown to render.
-
-## Search keywords
-
-React Markdown renderer, GitHub Flavoured Markdown, GFM tables, task lists, KaTeX, LaTeX math, syntax highlighting, code copy button, safe HTML, TypeScript, React 16, React 17, and React 18.
-
-### Which setting should I use?
-
-| Goal | Settings to use | Notes |
-| --- | --- | --- |
-| Render a normal article | `children` or `value` | The default configuration supports GFM, math, images, links, and code. |
-| Render user comments safely | `allowHtml={false}` | Best default for community content; all embedded HTML is shown as text. |
-| Render trusted rich content | `allowHtml sanitizeHtml` | Allows safe HTML while removing scripts and event handlers. |
-| Preserve custom HTML exactly | `allowHtml sanitizeHtml={false}` | Only use for content you fully control. |
-| Use Markdown inside a sentence | `inline applyStyles={false}` | Prevents a paragraph wrapper and list styling. |
-| Match your design system code style | `codeTheme={false}` | Produces normal code elements instead of the built-in highlighter. |
-| Track documentation usage | `onCopyCode` | Receives the copied source and detected language. |
-| Replace a rendered tag | `components` | Pass a renderer for `a`, `img`, `code`, or any react-markdown element. |
-| Add custom syntax | `remarkPlugins`, `rehypePlugins` | Use compatible Unified plugins. |
+| `children` / `value` | required input | Markdown source; `value` wins when both exist. |
+| `applyStyles` | `true` | Apply the package's sensible element styles. |
+| `inline` | `false` | Render paragraphs as inline spans. |
+| `allowHtml` | `false` | Opt in to raw HTML parsing (secure 2.0 default). |
+| `sanitizeHtml` | `true` | Sanitize raw HTML after opting in. Keep enabled for untrusted content. |
+| `sanitizeSchema` | built-in | Extend/replace the `rehype-sanitize` schema. |
+| `allowedElements` / `disallowedElements` | — | Restrict rendered Markdown tags. |
+| `unwrapDisallowed` | `false` | Keep text children when a tag is disallowed. |
+| `allowedProtocols` | `http`, `https`, `mailto`, `tel` | Allowed URL schemes for links and images. |
+| `urlTransform` | built-in policy | Return a rewritten URL or `null` to block it. |
+| `components` | built-ins | Override any `react-markdown` element renderer. |
+| `remarkPlugins` / `rehypePlugins` | `[]` | Add compatible Unified plugins. |
+| `codeTheme` | Atom Dark | Prism theme object, or `false` for plain code. |
+| `lazyCodeHighlighting` | `true` | Load the highlighter only when a fenced block renders. |
+| `showLineNumbers` | `true` | Default code line-number visibility. |
+| `showCopyButton` | `true` | Show code copy buttons. |
+| `onCopyCode` | — | Callback `(code, language)` after a copy. |
+| `linkTarget` | — | Target for links; `_blank` gets `noopener noreferrer`. |
+| `imageLoading` | `lazy` | Native image loading mode. |
+| `toc` | `false` | `true` or `{ title, minDepth, maxDepth, className }`. |
+| `headingLinks` | `true` | Add keyboard-safe `#` heading permalinks. |
+| `callouts` | `true` | Transform fenced `:::kind` blocks into callouts. |
+| `frontmatter` | `true` | Strip the opening frontmatter block from rendered content. |
+| `onFrontmatter` | — | Receive parsed frontmatter data. |
+| `renderFrontmatter` | — | Render a metadata banner before the document. |
 
 ## Recipes
 
-### Every option in one component
-
-```tsx
-<MarkdownPro
-  value={markdown}
-  applyStyles
-  inline={false}
-  allowHtml
-  sanitizeHtml
-  codeTheme={atomDark}
-  showLineNumbers
-  showCopyButton
-  onCopyCode={(code, language) => console.log(language, code)}
-  linkTarget="_blank"
-  imageLoading="lazy"
-  components={{ a: CustomLink }}
-  remarkPlugins={[myRemarkPlugin]}
-  rehypePlugins={[myRehypePlugin]}
-/>
-```
-
-`value` and `children` are compatible; `value` wins if both are passed. `remarkPlugins` and `rehypePlugins` use the standard Unified plugin format accepted by `react-markdown`.
-
-### Secure user-generated Markdown
+### Secure user content
 
 ```tsx
 <MarkdownPro value={comment} allowHtml={false} />
 ```
 
-Raw HTML remains compatible with the legacy component, but is sanitized by default:
-
-```tsx
-<MarkdownPro value={trustedContent} allowHtml sanitizeHtml />
-```
-
-Do not use `sanitizeHtml={false}` with user-provided content.
-
-### Custom links and images
+### Strict links and elements
 
 ```tsx
 <MarkdownPro
   value={markdown}
-  linkTarget="_blank"
-  imageLoading="eager"
-  components={{
-    a: ({ href, children }) => <a className="brand-link" href={href}>{children}</a>
-  }}
+  allowedProtocols={["https"]}
+  disallowedElements={["img", "iframe"]}
+  unwrapDisallowed
+  urlTransform={(url, kind) => kind === "href" ? url : null}
 />
 ```
 
-### Capture copied code
+### Code metadata and line highlights
+
+The info string supports `title="App.tsx"`, `filename=App.tsx`, `collapse`, `lineNumbers=false`, and ranges such as `{1,3-4}`:
+
+````md
+```tsx title="App.tsx" {1,3-4} collapse
+const first = true;
+const second = false;
+const third = true;
+```
+````
+
+### TOC, callouts, frontmatter, and footnotes
+
+```md
+---
+title: Release guide
+draft: false
+tags: [react, markdown]
+---
+# Release guide
+
+:::tip Start here
+Use the secure defaults.[^1]
+:::
+
+[^1]: Footnotes are powered by GFM.
+```
 
 ```tsx
 <MarkdownPro
-  value={markdown}
-  showLineNumbers={false}
-  onCopyCode={(code, language) => analytics.track("code_copied", { language, code })}
+  value={document}
+  toc={{ title: "On this page", minDepth: 2, maxDepth: 4 }}
+  renderFrontmatter={(data) => <small>{String(data.title)}</small>}
+  onFrontmatter={(data) => analytics.track("document", data)}
 />
 ```
 
-### Plain or themed code
+### Full extension point
 
 ```tsx
-// Default highlighted Atom theme.
-<MarkdownPro>{markdown}</MarkdownPro>
-
-// Normal <code> elements for a design system that styles code itself.
-<MarkdownPro value={markdown} codeTheme={false} showCopyButton={false} />
-```
-
-### Inline Markdown and parser extensions
-
-```tsx
-<p>
-  Status: <MarkdownPro inline applyStyles={false}>**Ready**</MarkdownPro>
-</p>
-
 <MarkdownPro
   value={markdown}
+  components={{ a: Link }}
   remarkPlugins={[myRemarkPlugin]}
   rehypePlugins={[myRehypePlugin]}
+  onCopyCode={(code, language) => console.log(language, code)}
 />
 ```
 
-### Currency and math
+## Versioning
 
-Use LaTeX delimiters for math, such as `$x^2$` and `$$\\frac{a}{b}$$`. For unambiguous literal currency in Markdown, write `\\$20`.
+`2.0.0` combines the 1.3 URL/element/code controls and 1.4 document features with the secure HTML default, stricter declarations, and lazy code highlighting. The default `allowHtml={false}` is intentionally breaking; opt in explicitly for trusted HTML.
 
-## Development and release checks
+## Development
 
 ```bash
 npm install
 npm run check
 ```
 
-The test suite validates legacy behavior plus GFM, math, safe and trusted HTML, code variants, copy callbacks, links, images, component overrides, inline mode, styles, TypeScript, compilation, and package contents.
-
-## Compatibility
-
-The package supports React 16.8, 17, and 18. It publishes both ESM and CommonJS entry points and is intended for React build tools such as Vite, Webpack, Parcel, and Next.js.
-
-For user-generated content, use `allowHtml={false}`. The `allowHtml` default remains `true` for 1.x compatibility; a future 2.0 release can safely change that default.
-
-See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+`npm run check` runs strict TypeScript, unit tests, package consumer smoke tests, Playwright browser tests, and an npm dry-run. GitHub Pages deploys the demo from `main` after CI passes.
 
 ## License
 
