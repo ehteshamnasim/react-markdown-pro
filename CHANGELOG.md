@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- Complete package, documentation, demo, test, security, and release-tooling update.
+
 ## 1.1.2
 
 ### Fixed
