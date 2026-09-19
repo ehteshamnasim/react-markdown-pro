@@ -3,15 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Interactive reference for react-markdown-pro, a React Markdown renderer with GFM, KaTeX math, syntax highlighting, copy controls, and safe HTML." />
-    <meta name="keywords" content="React Markdown, Markdown renderer, GFM, GitHub Flavored Markdown, KaTeX, LaTeX, syntax highlighting, TypeScript" />
+    <meta name="description" content="Try react-markdown-pro in your browser: a React Markdown renderer with GFM, KaTeX math, secure HTML, URL policies, TOC, callouts, frontmatter, footnotes, and code highlighting." />
+    <meta name="keywords" content="react markdown renderer, React Markdown component, Markdown playground, GitHub Flavored Markdown, GFM, KaTeX, LaTeX, secure HTML, syntax highlighting, table of contents, TypeScript" />
     <meta name="robots" content="index, follow" />
+    <meta name="author" content="Ehtesham Nasim" />
+    <link rel="canonical" href="https://ehteshamnasim.github.io/react-markdown-pro/demo.html" />
     <meta name="theme-color" content="#101828" />
-    <meta property="og:title" content="react-markdown-pro demo" />
-    <meta property="og:description" content="A complete interactive reference for rendering Markdown in React." />
+    <meta property="og:title" content="react-markdown-pro — React Markdown playground" />
+    <meta property="og:description" content="Explore GFM, math, secure HTML, URL policies, TOC, callouts, frontmatter, footnotes, and code highlighting in an interactive React Markdown demo." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ehteshamnasim.github.io/react-markdown-pro/demo.html" />
+    <meta property="og:site_name" content="react-markdown-pro" />
     <meta name="twitter:card" content="summary" />
-    <title>react-markdown-pro demo</title>
+    <meta name="twitter:title" content="react-markdown-pro — React Markdown playground" />
+    <meta name="twitter:description" content="A complete interactive reference for rendering Markdown safely in React." />
+    <title>react-markdown-pro | React Markdown playground and demo</title>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"SoftwareApplication","name":"react-markdown-pro","applicationCategory":"DeveloperApplication","operatingSystem":"Web","description":"A configurable React Markdown renderer with GFM, KaTeX, secure HTML controls, document navigation, callouts, frontmatter, footnotes, and code highlighting.","url":"https://ehteshamnasim.github.io/react-markdown-pro/demo.html","downloadUrl":"https://www.npmjs.com/package/react-markdown-pro","codeRepository":"https://github.com/ehteshamnasim/react-markdown-pro","author":{"@type":"Person","name":"Ehtesham Nasim"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+    </script>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <style>
       :root { color: #172033; background: #f7f8fa; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -93,11 +102,16 @@
       .settings { width: 100%; border-collapse: collapse; font-size: 14px; }
       .settings th, .settings td { padding: 11px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
       .settings th { color: #475569; font-weight: 700; }
+      .site-footer { display: flex; justify-content: space-between; gap: 24px; max-width: 1120px; margin: 0 auto; padding: 28px; border-top: 1px solid #dfe4ea; color: #64748b; font-size: 13px; }
+      .site-footer strong { color: #172033; }
+      .site-footer nav { display: flex; gap: 18px; }
+      .site-footer a { color: #0f766e; text-decoration: none; }
+      .site-footer a:hover, .site-footer a:focus-visible { text-decoration: underline; }
       .examples-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
       .example { min-width: 0; padding: 18px; border: 1px solid #dfe4ea; background: #fff; }
       .example h3 { margin: 0 0 10px; font-size: 15px; }
       .example p { margin-bottom: 0; }
-      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid, .playground-grid { grid-template-columns: 1fr; } .playground-toolbar { flex-wrap: wrap; } .sample-actions { order: 3; width: 100%; margin-left: 0; } }
+      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid, .playground-grid { grid-template-columns: 1fr; } .playground-toolbar { flex-wrap: wrap; } .sample-actions { order: 3; width: 100%; margin-left: 0; } .site-footer { flex-direction: column; } .site-footer nav { flex-wrap: wrap; } }
     </style>
   </head>
   <body>
