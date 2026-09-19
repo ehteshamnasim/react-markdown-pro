@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+
+### Fixed
+
+- Fresh npm patch release after npm reserved prior unpublished versions during two-factor publishing.
+
 ## 1.1.1
 
 ### Fixed

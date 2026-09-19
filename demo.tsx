@@ -77,7 +77,7 @@ function App() {
   const BrandedLink = ({ href, children }: any) => <a className="brand-link" href={href} target="_blank" rel="noreferrer">↗ {children}</a>;
 
   return <>
-    <header><div className="topbar"><div className="brand">react-markdown-pro <span>/ renderer reference</span></div><div className="version">v1.1.1</div></div></header>
+    <header><div className="topbar"><div className="brand">react-markdown-pro <span>/ renderer reference</span></div><div className="version">v1.1.2</div></div></header>
     <div className="hero-wrap"><div className="hero"><div><div className="eyebrow">React Markdown, deliberately complete</div><h1>Render content without compromising your interface.</h1><p className="lead">A production-ready renderer for documentation, education, product content, and user-authored Markdown-with a small API and serious controls.</p></div><div className="hero-panel"><div className="panel-label"><span>Article.tsx</span><span>tsx</span></div><pre><code>{heroCode}</code></pre></div></div></div>
     <main className="layout">
       <aside><p>On this page</p><nav aria-label="Demo sections"><strong>Content</strong><a href="#gfm">Markdown and GFM</a><a href="#math">Math and currency</a><a href="#patterns">Content patterns</a><strong>Rendering</strong><a href="#code">Code rendering</a><a href="#security">HTML safety</a><a href="#custom">Custom components</a><a href="#inline">Inline and plugins</a><strong>Reference</strong><a href="#settings">All settings</a></nav></aside>
