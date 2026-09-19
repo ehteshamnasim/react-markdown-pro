@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.2
+
+### Changed
+
+- Added an interactive Markdown playground to the demo with live HTML, URL, and element security controls.
+- Improved scroll-aware side navigation and expanded the README feature map.
+
 ## 2.0.1
 
 ### Changed

@@ -38,8 +38,19 @@
       nav { display: grid; gap: 1px; }
       nav strong { margin: 14px 0 4px; color: #98a2b3; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
       nav a { padding: 6px 9px; border-left: 2px solid transparent; color: #526178; font-size: 14px; text-decoration: none; }
-      nav a:hover, nav a:focus-visible { border-color: #14b8a6; color: #0f766e; background: #f0fdfa; outline: none; }
+      nav a:hover, nav a:focus-visible, nav a.is-active { border-color: #14b8a6; color: #0f766e; background: #f0fdfa; outline: none; }
+      nav a.is-active { font-weight: 750; box-shadow: inset 2px 0 #14b8a6; }
       .card { padding: 42px 0; }
+      .section-kicker { color: #0f766e; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+      .intro { max-width: 680px; color: #526178; }
+      .playground-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; margin-top: 22px; }
+      .field-label, .preview-label { display: block; margin-bottom: 8px; color: #475569; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+      #markdown-input { width: 100%; min-height: 330px; resize: vertical; padding: 14px; border: 1px solid #cbd5e1; background: #0f172a; color: #e2e8f0; font: 13px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .playground-preview { min-height: 330px; padding: 18px; border: 1px solid #dfe4ea; background: #fff; overflow-wrap: anywhere; }
+      .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; padding: 12px; border: 1px solid #dfe4ea; background: #f8fafc; color: #475569; font-size: 13px; }
+      .control-row label { display: inline-flex; align-items: center; gap: 6px; }
+      .control-row select, .reset-button { padding: 6px 9px; border: 1px solid #cbd5e1; background: #fff; color: #334155; font: inherit; }
+      .reset-button { cursor: pointer; font-weight: 700; }
       .card:first-child { border-top: 0; padding-top: 0; }
       .card h1 { margin-top: 0; font-size: 31px; letter-spacing: -.032em; }
       .card h2 { margin: 0 0 18px; font-size: 26px; letter-spacing: -.032em; }
@@ -65,7 +76,7 @@
       .example { min-width: 0; padding: 18px; border: 1px solid #dfe4ea; background: #fff; }
       .example h3 { margin: 0 0 10px; font-size: 15px; }
       .example p { margin-bottom: 0; }
-      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid, .playground-grid { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>

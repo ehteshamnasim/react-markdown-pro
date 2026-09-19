@@ -14,10 +14,6 @@
 
 <p align="center"><a href="https://ehteshamnasim.github.io/react-markdown-pro/demo.html">View the live demo →</a></p>
 
-**Live demo:** https://ehteshamnasim.github.io/react-markdown-pro/demo.html
-
-![react-markdown-pro rendered document example](https://raw.githubusercontent.com/ehteshamnasim/react-markdown-pro/main/images/example-screenshot.png)
-
 ## Why this package?
 
 `react-markdown-pro` gives a React application one predictable component for articles, documentation, comments, changelogs, and user-authored content. It keeps the familiar `children` API from the original component, while adding opt-in controls for security, navigation, metadata, code, and custom rendering.
@@ -202,9 +198,21 @@ Use the secure defaults.[^1]
 />
 ```
 
-## 2.0 migration
+## 2.0 migration and feature map
 
-Version 2.0 combines the URL/element/code controls planned for 1.3 and the TOC/document features planned for 1.4. The breaking change is the secure HTML default:
+Version 2.0 combines the complete roadmap rather than shipping isolated partial releases:
+
+| Roadmap | Included in 2.0 |
+| --- | --- |
+| 1.3 URL policy | `allowedProtocols`, `urlTransform`, safe relative URLs, and blocked dangerous schemes |
+| 1.3 element policy | `allowedElements`, `disallowedElements`, and `unwrapDisallowed` |
+| 1.3 code controls | titles/filenames, collapsed blocks, line-number overrides, and `{1,3-4}` highlighting |
+| 1.4 navigation | stable heading IDs, permalink links, and configurable TOC depth/title/class |
+| 1.4 authoring | note/tip/info/warning/danger callouts, frontmatter callbacks/rendering, and GFM footnotes |
+| 2.0 security | raw HTML disabled by default, opt-in sanitization, and stricter TypeScript declarations |
+| 2.0 performance | lazy-loaded syntax highlighting and plain-code fallback |
+
+The one breaking behavior is the secure HTML default:
 
 ```tsx
 // 1.x behavior, only for trusted legacy content:

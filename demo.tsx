@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import MarkdownPro from "./src";
 
@@ -92,14 +92,33 @@ Every heading receives a stable URL.[^qa]
 
 function App() {
   const [lastCopied, setLastCopied] = useState("Nothing copied yet");
+  const [activeSection, setActiveSection] = useState("playground");
+  const [playgroundMarkdown, setPlaygroundMarkdown] = useState("# Try your own Markdown\n\nPaste or edit this document. HTML is disabled by default.\n\n- **Bold**, _italic_, and [safe links](https://example.com)\n- [x] GFM task list\n\n```tsx\nconst ready = true;\n```");
+  const [playgroundAllowHtml, setPlaygroundAllowHtml] = useState(false);
+  const [playgroundSanitize, setPlaygroundSanitize] = useState(true);
+  const [playgroundProtocols, setPlaygroundProtocols] = useState("https");
+  useEffect(() => {
+    const sections = Array.from(document.querySelectorAll<HTMLElement>(".card[id]"));
+    const updateActive = () => {
+      const marker = Math.min(window.innerHeight * 0.28, 220);
+      const passed = sections.filter((section) => section.getBoundingClientRect().top <= marker);
+      setActiveSection((passed[passed.length - 1] || sections[0])?.id || "playground");
+    };
+    updateActive();
+    window.addEventListener("scroll", updateActive, { passive: true });
+    window.addEventListener("resize", updateActive);
+    return () => { window.removeEventListener("scroll", updateActive); window.removeEventListener("resize", updateActive); };
+  }, []);
+  const menuLink = (id: string, label: string) => <a href={`#${id}`} className={activeSection === id ? "is-active" : undefined} aria-current={activeSection === id ? "location" : undefined}>{label}</a>;
   const BrandedLink = ({ href, children }: any) => <a className="brand-link" href={href} target="_blank" rel="noreferrer">↗ {children}</a>;
 
   return <>
-    <header><div className="topbar"><div className="brand">react-markdown-pro <span>/ renderer reference</span></div><div className="version">2.0.0 release candidate</div></div></header>
-    <div className="hero-wrap"><div className="hero"><div><div className="eyebrow">React Markdown, deliberately complete</div><h1>Render content without compromising your interface.</h1><p className="lead">A production-ready renderer for documentation, education, product content, and user-authored Markdown-with a small API and serious controls.</p></div><div className="hero-panel"><div className="panel-label"><span>Article.tsx</span><span>tsx</span></div><pre><code>{heroCode}</code></pre></div></div></div>
+    <header><div className="topbar"><div className="brand">react-markdown-pro <span>/ renderer reference</span></div><div className="version">2.0.1</div></div></header>
+    <div className="hero-wrap"><div className="hero"><div><div className="eyebrow">React Markdown, deliberately complete</div><h1>Render content with clear controls.</h1><p className="lead">A focused renderer for documentation, education, product content, and user-authored Markdown—with practical security and extension points.</p></div><div className="hero-panel"><div className="panel-label"><span>Article.tsx</span><span>tsx</span></div><pre><code>{heroCode}</code></pre></div></div></div>
     <main className="layout">
-      <aside><p>On this page</p><nav aria-label="Demo sections"><strong>Content</strong><a href="#gfm">Markdown and GFM</a><a href="#math">Math and currency</a><a href="#patterns">Content patterns</a><a href="#document">Document features</a><strong>Rendering</strong><a href="#code">Code rendering</a><a href="#security">HTML safety</a><a href="#custom">Custom components</a><a href="#inline">Inline and plugins</a><strong>Reference</strong><a href="#settings">All settings</a></nav></aside>
+      <aside><p>On this page</p><nav aria-label="Demo sections"><strong>Try it</strong>{menuLink("playground", "Markdown playground")}<strong>Content</strong>{menuLink("gfm", "Markdown and GFM")}{menuLink("math", "Math and currency")}{menuLink("patterns", "Content patterns")}{menuLink("document", "Document features")}<strong>Rendering</strong>{menuLink("code", "Code rendering")}{menuLink("security", "HTML safety")}{menuLink("custom", "Custom components")}{menuLink("inline", "Inline and plugins")}<strong>Reference</strong>{menuLink("settings", "All settings")}</nav></aside>
       <div>
+        <section className="card" id="playground"><div className="section-kicker">Interactive sandbox</div><h2>Paste Markdown and preview it</h2><p className="intro">Test the renderer with your own content. Change the policy below and see exactly what is allowed before adding it to your application.</p><div className="playground-grid"><div><label className="field-label" htmlFor="markdown-input">Markdown input</label><textarea id="markdown-input" value={playgroundMarkdown} onChange={(event) => setPlaygroundMarkdown(event.target.value)} spellCheck={false} /></div><div className="playground-preview"><div className="preview-label">Rendered output</div><MarkdownPro value={playgroundMarkdown} allowHtml={playgroundAllowHtml} sanitizeHtml={playgroundSanitize} allowedProtocols={playgroundProtocols === "https" ? ["https"] : ["http", "https", "mailto", "tel"]} disallowedElements={["script", "iframe"]} unwrapDisallowed /></div></div><div className="control-row"><label><input type="checkbox" checked={playgroundAllowHtml} onChange={(event) => setPlaygroundAllowHtml(event.target.checked)} /> Allow raw HTML</label><label><input type="checkbox" checked={playgroundSanitize} onChange={(event) => setPlaygroundSanitize(event.target.checked)} disabled={!playgroundAllowHtml} /> Sanitize HTML</label><label>Links <select value={playgroundProtocols} onChange={(event) => setPlaygroundProtocols(event.target.value)}><option value="https">HTTPS only</option><option value="common">Common web protocols</option></select></label><button type="button" className="reset-button" onClick={() => setPlaygroundMarkdown("# Try your own Markdown\n\nPaste or edit this document. HTML is disabled by default.\n\n- **Bold**, _italic_, and [safe links](https://example.com)\n- [x] GFM task list")}>Reset example</button></div><p className="caption">Security policy: HTML is off initially, scripts and iframes are always disallowed, and links default to HTTPS only.</p></section>
         <section className="card" id="gfm"><MarkdownPro>{markdown.gfm}</MarkdownPro></section>
         <section className="card" id="math"><MarkdownPro value={markdown.math} /></section>
         <section className="card" id="patterns"><MarkdownPro value={markdown.patterns} /><p className="caption">Covers nested lists, blockquotes, inline code, hard line breaks, rules, autolinks, strikethrough, literal currency, and unknown code languages.</p></section>
