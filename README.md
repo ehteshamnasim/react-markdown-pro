@@ -32,9 +32,9 @@ export function Article() {
 
 ## Live examples
 
-Run `npm start` and open [`/demo.html`](./demo.html) for the interactive local showcase. It exercises every public option and is the source of truth for the rendered UI.
+Run `npm start`, then open [http://localhost:5173/demo.html](http://localhost:5173/demo.html) for the interactive local showcase. It exercises every public option and is the source of truth for the rendered UI.
 
-After the GitHub Pages workflow has run once on `main`, the same showcase is published at:
+After the GitHub Pages workflow has run once on `main`, open the [live interactive demo](https://ehteshamnasim.github.io/react-markdown-pro/demo.html). Individual sections are available at:
 
 - [Markdown and GFM](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#gfm)
 - [Math rendering](https://ehteshamnasim.github.io/react-markdown-pro/demo.html#math)
