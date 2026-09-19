@@ -9,6 +9,7 @@ import { JSDOM } from "jsdom";
 
 const require = createRequire(import.meta.url);
 const projectRoot = resolve(dirname(new URL(import.meta.url).pathname), "..");
+const npmCache = process.env.npm_config_cache || join(tmpdir(), "react-markdown-pro-npm-cache");
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost" });
 
 Object.assign(globalThis, {
@@ -30,7 +31,7 @@ assert.equal(typeof esmPackage.default, "function");
 const consumerDirectory = mkdtempSync(join(tmpdir(), "react-markdown-pro-consumer-"));
 
 try {
-  execFileSync("npm", ["pack", "--pack-destination", consumerDirectory, "--cache", "/private/tmp/react-markdown-pro-npm-cache"], {
+  execFileSync("npm", ["pack", "--pack-destination", consumerDirectory, "--cache", npmCache], {
     cwd: projectRoot,
     stdio: "pipe",
   });
@@ -51,7 +52,7 @@ try {
     ],
     {
       cwd: consumerDirectory,
-      env: { ...process.env, npm_config_cache: "/private/tmp/react-markdown-pro-npm-cache" },
+      env: { ...process.env, npm_config_cache: npmCache },
       stdio: "pipe",
     },
   );
