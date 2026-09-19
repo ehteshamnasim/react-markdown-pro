@@ -14,7 +14,9 @@
 
 <p align="center"><a href="https://ehteshamnasim.github.io/react-markdown-pro/demo.html">View the live demo →</a></p>
 
-![react-markdown-pro rendered document example](./images/example-screenshot.png)
+**Live demo:** https://ehteshamnasim.github.io/react-markdown-pro/demo.html
+
+![react-markdown-pro rendered document example](https://raw.githubusercontent.com/ehteshamnasim/react-markdown-pro/main/images/example-screenshot.png)
 
 ## Why this package?
 

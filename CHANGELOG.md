@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+### Changed
+
+- Reworked the README into a complete package guide with badges, screenshot, recipes, configuration reference, security guidance, and migration notes.
+
 ## 2.0.0
 
 ### Added
