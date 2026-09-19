@@ -44,12 +44,19 @@
       .section-kicker { color: #0f766e; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
       .intro { max-width: 680px; color: #526178; }
       .playground-shell { margin-top: 26px; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 14px; background: #f8fafc; }
-      .playground-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #dbe3ec; color: #475569; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+      .playground-toolbar { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid #dbe3ec; color: #475569; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+      .playground-toolbar > .safe-badge { margin-left: auto; }
+      .sample-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; text-transform: none; letter-spacing: 0; }
+      .sample-actions span { margin-right: 3px; color: #94a3b8; font-size: 11px; font-weight: 600; }
+      .sample-actions button { padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 5px; background: #fff; color: #475569; cursor: pointer; font-size: 11px; font-family: inherit; }
+      .sample-actions button:hover { border-color: #14b8a6; color: #0f766e; }
       .status-dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #14b8a6; box-shadow: 0 0 0 3px #ccfbf1; }
       .safe-badge { padding: 4px 8px; border: 1px solid #99f6e4; border-radius: 999px; color: #0f766e; background: #f0fdfa; font-size: 10px; }
       .playground-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 16px; padding: 18px; }
-      .field-label { display: flex; justify-content: space-between; margin-bottom: 8px; color: #475569; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-      .field-label span { color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+      .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; color: #475569; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+      .panel-heading > span:last-child { color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: none; }
+      .preview-state { display: inline-flex; align-items: center; gap: 5px; }
+      .preview-state .status-dot { width: 6px; height: 6px; margin: 0; box-shadow: none; }
       #markdown-input { width: 100%; min-height: 330px; resize: vertical; padding: 16px; border: 1px solid #334155; border-radius: 9px; outline: none; background: #0f172a; color: #e2e8f0; font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; transition: border-color .2s, box-shadow .2s; }
       #markdown-input:focus { border-color: #2dd4bf; box-shadow: 0 0 0 3px rgba(20, 184, 166, .15); }
       .playground-preview { min-height: 330px; max-height: 430px; overflow: auto; padding: 16px; border: 1px solid #dbe3ec; border-radius: 9px; background: #fff; overflow-wrap: anywhere; }
@@ -90,7 +97,7 @@
       .example { min-width: 0; padding: 18px; border: 1px solid #dfe4ea; background: #fff; }
       .example h3 { margin: 0 0 10px; font-size: 15px; }
       .example p { margin-bottom: 0; }
-      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid, .playground-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 46px; } .layout { grid-template-columns: 1fr; gap: 20px; } aside { position: static; } nav { grid-template-columns: repeat(2, 1fr); } nav strong { grid-column: 1 / -1; } .examples-grid, .playground-grid { grid-template-columns: 1fr; } .playground-toolbar { flex-wrap: wrap; } .sample-actions { order: 3; width: 100%; margin-left: 0; } }
     </style>
   </head>
   <body>
